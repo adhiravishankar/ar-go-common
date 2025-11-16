@@ -54,8 +54,7 @@ func SanitizeInput(input string) string {
 }
 
 // validateJWTSecret ensures the JWT secret meets security requirements
-func ValidateJWTSecret() error {
-	secret := os.Getenv("JWT_SECRET")
+func ValidateJWTSecret(secret string) error {
 	if secret == "" {
 		return fmt.Errorf("JWT_SECRET environment variable is required")
 	}
@@ -69,8 +68,10 @@ func ValidateJWTSecret() error {
 
 func Authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		secret := os.Getenv("JWT_SECRET")
+
 		// Validate JWT secret first
-		if err := ValidateJWTSecret(); err != nil {
+		if err := ValidateJWTSecret(secret); err != nil {
 			log.Printf("JWT secret validation failed: %v", err)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(500)
@@ -105,7 +106,7 @@ func Authenticate(next http.Handler) http.Handler {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
-			return []byte(os.Getenv("JWT_SECRET")), nil
+			return []byte(secret), nil
 		})
 
 		if err != nil {

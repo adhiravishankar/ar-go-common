@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -34,14 +33,8 @@ type EmailTemplate struct {
 }
 
 // GetVerificationEmailTemplate returns the email verification template
-func GetVerificationEmailTemplate(name, templateName, verificationToken string) EmailTemplate {
+func GetVerificationEmailTemplate(name, templateName, baseURL,verificationToken string) EmailTemplate {
 	subject := "Verify Your Email - Flight History App"
-
-	// Get the base URL from environment variable
-	baseURL := os.Getenv("FRONTEND_URL")
-	if baseURL == "" {
-		baseURL = "http://localhost:5174" // Default for development
-	}
 
 	verificationLink := fmt.Sprintf("%s/verify-email?token=%s", baseURL, verificationToken)
 
@@ -70,24 +63,12 @@ func GetVerificationEmailTemplate(name, templateName, verificationToken string) 
 }
 
 // SendVerificationEmail sends an email verification email using SES
-func SendVerificationEmail(toEmail, name, templateName, verificationToken string) error {
+func SendVerificationEmail(toEmail, name, templateName, baseURL, fromEmail, verificationToken string) error {
 	if sesClient == nil {
 		return fmt.Errorf("SES client not initialized")
 	}
 
-	// Get the base URL from environment variable
-	baseURL := os.Getenv("FRONTEND_URL")
-	if baseURL == "" {
-		baseURL = "http://localhost:5174" // Default for development
-	}
-
-	template := GetVerificationEmailTemplate(name, templateName, verificationToken)
-
-	// Get the sender email from environment variable
-	fromEmail := os.Getenv("SES_FROM_EMAIL")
-	if fromEmail == "" {
-		return fmt.Errorf("SES_FROM_EMAIL environment variable not set")
-	}
+	template := GetVerificationEmailTemplate(name, templateName, baseURL, verificationToken)
 
 	input := &ses.SendEmailInput{
 		Destination: &types.Destination{
@@ -119,14 +100,9 @@ func SendVerificationEmail(toEmail, name, templateName, verificationToken string
 }
 
 // SendWelcomeEmail sends a welcome email after successful verification
-func SendWelcomeEmail(toEmail, name string) error {
+func SendWelcomeEmail(toEmail, fromEmail, name string) error {
 	if sesClient == nil {
 		return fmt.Errorf("SES client not initialized")
-	}
-
-	fromEmail := os.Getenv("SES_FROM_EMAIL")
-	if fromEmail == "" {
-		return fmt.Errorf("SES_FROM_EMAIL environment variable not set")
 	}
 
 	subject := "Welcome to Flight History App!"
@@ -176,24 +152,12 @@ func SendWelcomeEmail(toEmail, name string) error {
 }
 
 // SendPasswordResetEmail sends a password reset email using SES
-func SendPasswordResetEmail(toEmail, name, resetToken string) error {
+func SendPasswordResetEmail(toEmail, name, baseURL, fromEmail, resetToken string) error {
 	if sesClient == nil {
 		return fmt.Errorf("SES client not initialized")
 	}
 
-	// Get the base URL from environment variable
-	baseURL := os.Getenv("FRONTEND_URL")
-	if baseURL == "" {
-		baseURL = "http://localhost:5174" // Default for development
-	}
-
 	resetLink := fmt.Sprintf("%s/reset-password?token=%s", baseURL, resetToken)
-
-	// Get the sender email from environment variable
-	fromEmail := os.Getenv("SES_FROM_EMAIL")
-	if fromEmail == "" {
-		return fmt.Errorf("SES_FROM_EMAIL environment variable not set")
-	}
 
 	subject := "Reset Your Password - Flight History App"
 	body := fmt.Sprintf(`
@@ -244,14 +208,9 @@ func SendPasswordResetEmail(toEmail, name, resetToken string) error {
 }
 
 // SendPasswordChangeConfirmationEmail sends a confirmation email after password change
-func SendPasswordChangeConfirmationEmail(toEmail, name string) error {
+func SendPasswordChangeConfirmationEmail(toEmail, fromEmail, name string) error {
 	if sesClient == nil {
 		return fmt.Errorf("SES client not initialized")
-	}
-
-	fromEmail := os.Getenv("SES_FROM_EMAIL")
-	if fromEmail == "" {
-		return fmt.Errorf("SES_FROM_EMAIL environment variable not set")
 	}
 
 	subject := "Password Changed - Flight History App"

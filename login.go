@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -23,7 +22,7 @@ type LoginForm struct {
 	Password string `json:"password" binding:"required"` // The password of the user
 }
 
-func Login(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
+func Login(database *mongo.Database, w http.ResponseWriter, r *http.Request, secret string) {
 	collection := database.Collection("users")
 
 	// Get the request body
@@ -104,7 +103,7 @@ func Login(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
 		"aud": "flight-history-users",
 	})
 
-	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
 		log.Printf("Failed to sign JWT: %v", err)
 		RespondWithJSON(w, 500, map[string]string{"error": "Server error"})

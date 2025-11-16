@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -47,10 +46,7 @@ func NewOptimizedClient(uri string, config *DatabaseConfig) (*mongo.Client, erro
 
 	// Use environment variable if URI is not provided
 	if uri == "" {
-		uri = os.Getenv("MONGODB_URL")
-		if uri == "" {
-			return nil, fmt.Errorf("MongoDB URI not provided and MONGODB_URL environment variable is not set")
-		}
+		return nil, fmt.Errorf("MongoDB URI not provided and MONGODB_URL environment variable is not set")
 	}
 
 	// Use default configuration if not provided
