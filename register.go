@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	"crypto/rand"
@@ -105,13 +105,13 @@ func generateVerificationToken() (string, error) {
 	if _, err := rand.Read(bytes); err != nil {
 		return "", fmt.Errorf("failed to generate random bytes: %w", err)
 	}
-	
+
 	// Convert bytes to uint32 and constrain to 8-digit range
 	randomNum := uint32(bytes[0])<<24 | uint32(bytes[1])<<16 | uint32(bytes[2])<<8 | uint32(bytes[3])
-	
+
 	// Ensure it's in the range 10000000-99999999 (8 digits)
 	token := 10000000 + (randomNum % 90000000)
-	
+
 	return fmt.Sprintf("%08d", token), nil
 }
 

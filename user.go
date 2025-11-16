@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	"context"
@@ -63,7 +63,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	common.RespondWithJSON(w, http.StatusOK, user)
-}	
+}
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	userID := getUserID(r)

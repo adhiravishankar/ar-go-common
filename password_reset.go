@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	"crypto/rand"
@@ -19,8 +19,8 @@ type ForgotPasswordForm struct {
 }
 
 type ResetPasswordForm struct {
-	Token           string `json:"token" binding:"required"`            // The password reset token
-	NewPassword     string `json:"new_password" binding:"required"`     // The new password
+	Token       string `json:"token" binding:"required"`        // The password reset token
+	NewPassword string `json:"new_password" binding:"required"` // The new password
 }
 
 // PasswordReset represents a password reset request in the database
@@ -175,9 +175,9 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 	// Find password reset record by token
 	var passwordReset PasswordReset
 	err := resetsCollection.FindOne(r.Context(), bson.M{
-		"token": form.Token,
-		"used":  false,                               // Token must not be used
-		"expires_at": bson.M{"$gt": time.Now()},     // Token must not be expired
+		"token":      form.Token,
+		"used":       false,                     // Token must not be used
+		"expires_at": bson.M{"$gt": time.Now()}, // Token must not be expired
 	}).Decode(&passwordReset)
 
 	if err != nil {

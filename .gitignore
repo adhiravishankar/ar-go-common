@@ -1,0 +1,13 @@
+java-data-parser/bin
+*.properties
+.VSCodeCounter
+mongo-converter/.env
+admin-backend/admin-backend
+admin-backend/admin-server-linux-arm64
+customer-backend/customer-server-linux-arm64
+
+mongo-converter/data
+
+*.exe
+server-linux-arm64
+server-linux-amd64
