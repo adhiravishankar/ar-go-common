@@ -71,7 +71,7 @@ func VerifyEmail(database *mongo.Database, w http.ResponseWriter, r *http.Reques
 	}
 
 	// Sanitize token input
-	form.Token = sanitizeInput(form.Token)
+	form.Token = SanitizeInput(form.Token)
 
 	if form.Token == "" {
 		RespondWithJSON(w, 400, map[string]string{"error": "Verification token is required"})
@@ -79,7 +79,7 @@ func VerifyEmail(database *mongo.Database, w http.ResponseWriter, r *http.Reques
 	}
 
 	// Validate token format (should be exactly 8 digits)
-	if err := validateVerificationToken(form.Token); err != nil {
+	if err := ValidateVerificationToken(form.Token); err != nil {
 		RespondWithJSON(w, 400, map[string]string{"error": err.Error()})
 		return
 	}
@@ -165,7 +165,6 @@ func VerifyEmail(database *mongo.Database, w http.ResponseWriter, r *http.Reques
 		},
 	})
 }
-
 
 func ResendVerificationEmail(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
 	var form ResendVerificationEmailForm

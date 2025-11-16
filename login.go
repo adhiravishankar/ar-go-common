@@ -33,7 +33,7 @@ func Login(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Sanitize username
-	form.Email = sanitizeInput(form.Email)
+	form.Email = SanitizeInput(form.Email)
 
 	// Find the user in the database
 	var user User
@@ -121,7 +121,7 @@ func Login(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
 	})
 
 	// Upgrade password hash if needed
-	go rehashPasswordIfNeeded(database, form.Password, &user)
+	go RehashPasswordIfNeeded(database, form.Password, &user)
 
 	RespondWithJSON(w, 200, map[string]interface{}{
 		"token": tokenString,
@@ -136,7 +136,10 @@ func Login(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
 // rehashPasswordIfNeeded checks if the user's password hash uses the latest
 // recommended parameters, and if not, re-hashes it and updates it in the database.
 // This is done in a goroutine to not block the login request.
-func rehashPasswordIfNeeded(database *mongo.Database, password string, user *User) {
+// RehashPasswordIfNeeded checks if the user's password hash uses the latest
+// recommended parameters, and if not, re-hashes it and updates it in the database.
+// This is done in a goroutine to not block the login request.
+func RehashPasswordIfNeeded(database *mongo.Database, password string, user *User) {
 	p, _, _, err := DecodeHash(user.Password)
 	if err != nil {
 		log.Printf("rehash: could not decode password hash for user %s: %v\n", user.Email, err)

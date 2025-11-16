@@ -24,8 +24,8 @@ type RegisterForm struct {
 	Name     string `json:"name" binding:"required"`     // The name of the user
 }
 
-// validateEmail checks if the email meets security requirements
-func validateEmail(email string) error {
+// ValidateEmail checks if the email meets security requirements
+func ValidateEmail(email string) error {
 	if len(email) < 6 {
 		return fmt.Errorf("email must be at least 6 characters long")
 	}
@@ -37,8 +37,8 @@ func validateEmail(email string) error {
 	return nil
 }
 
-// validatePassword checks if the password meets security requirements
-func validatePassword(password string) error {
+// ValidatePassword checks if the password meets security requirements
+func ValidatePassword(password string) error {
 	if len(password) < 16 {
 		return fmt.Errorf("password must be at least 16 characters long")
 	}
@@ -83,8 +83,8 @@ func validatePassword(password string) error {
 	return nil
 }
 
-// validateVerificationToken validates that a token is exactly 8 digits
-func validateVerificationToken(token string) error {
+// ValidateVerificationToken validates that a token is exactly 8 digits
+func ValidateVerificationToken(token string) error {
 	if len(token) != 8 {
 		return fmt.Errorf("verification token must be exactly 8 digits")
 	}
@@ -98,8 +98,8 @@ func validateVerificationToken(token string) error {
 	return nil
 }
 
-// generateVerificationToken generates a cryptographically secure 8-digit verification token
-func generateVerificationToken() (string, error) {
+// GenerateVerificationToken generates a cryptographically secure 8-digit verification token
+func GenerateVerificationToken() (string, error) {
 	// Generate a random 8-digit number (10000000 to 99999999)
 	bytes := make([]byte, 4) // 32 bits should be enough for good randomness
 	if _, err := rand.Read(bytes); err != nil {
@@ -132,18 +132,18 @@ func Register(database *mongo.Database, w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Sanitize inputs
-	form.Email = sanitizeInput(form.Email)
-	form.Name = sanitizeInput(form.Name)
+	form.Email = SanitizeInput(form.Email)
+	form.Name = SanitizeInput(form.Name)
 
 	// Validate username
-	if err := validateEmail(form.Email); err != nil {
+	if err := ValidateEmail(form.Email); err != nil {
 		w.WriteHeader(400)
 		w.Write([]byte(err.Error()))
 		return
 	}
 
 	// Validate password complexity
-	if err := validatePassword(form.Password); err != nil {
+	if err := ValidatePassword(form.Password); err != nil {
 		w.WriteHeader(400)
 		w.Write([]byte(err.Error()))
 		return
@@ -158,7 +158,7 @@ func Register(database *mongo.Database, w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Generate verification token
-	verificationToken, err := generateVerificationToken()
+	verificationToken, err := GenerateVerificationToken()
 	if err != nil {
 		log.Printf("Failed to generate verification token: %v", err)
 		w.WriteHeader(500)

@@ -20,7 +20,7 @@ func RespondWithError(w http.ResponseWriter, code int, err error) {
 	json.NewEncoder(w).Encode(ErrorResponse{
 		Error:   err.Error(),
 		Code:    code,
-		Message: getErrorMessage(code),
+		Message: GetErrorMessage(code),
 	})
 }
 
@@ -42,7 +42,7 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	json.NewEncoder(w).Encode(payload)
 }
 
-func getErrorMessage(code int) string {
+func GetErrorMessage(code int) string {
 	switch code {
 	case 400:
 		return "Bad Request"

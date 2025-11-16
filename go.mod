@@ -1,15 +1,15 @@
 module github.com/adhiravishankar/ar-go-common
 
-go 1.22.0
+go 1.24.0
 
 require (
-	github.com/dgraph-io/ristretto v0.2.0
-	go.mongodb.org/mongo-driver v1.17.6
 	github.com/aws/aws-sdk-go-v2 v1.39.6
 	github.com/aws/aws-sdk-go-v2/config v1.31.20
 	github.com/aws/aws-sdk-go-v2/service/ses v1.34.11
-	github.com/google/uuid v1.6.0
+	github.com/dgraph-io/ristretto v0.2.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
+	github.com/google/uuid v1.6.0
+	go.mongodb.org/mongo-driver v1.17.6
 	golang.org/x/crypto v0.44.0
 )
 

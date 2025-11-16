@@ -16,14 +16,14 @@ const (
 	userKey contextKey = "userID"
 )
 
-// setUserID stores the user ID in the request context
-func setUserID(r *http.Request, userID string) *http.Request {
+// SetUserID stores the user ID in the request context
+func SetUserID(r *http.Request, userID string) *http.Request {
 	ctx := context.WithValue(r.Context(), userKey, userID)
 	return r.WithContext(ctx)
 }
 
-// getUserID retrieves the user ID from the request context
-func getUserID(r *http.Request) string {
+// GetUserID retrieves the user ID from the request context
+func GetUserID(r *http.Request) string {
 	userID, _ := r.Context().Value(userKey).(string)
 	return userID
 }
@@ -49,7 +49,7 @@ type User struct {
 }
 
 func GetUser(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
-	userID := getUserID(r)
+	userID := GetUserID(r)
 	if userID == "" {
 		RespondWithJSON(w, http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
 		return
@@ -66,7 +66,7 @@ func GetUser(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateUser(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
-	userID := getUserID(r)
+	userID := GetUserID(r)
 	if userID == "" {
 		RespondWithJSON(w, http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
 		return

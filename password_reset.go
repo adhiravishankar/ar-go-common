@@ -34,8 +34,8 @@ type PasswordReset struct {
 	UsedAt    *time.Time `json:"used_at" bson:"used_at"`       // When the token was used
 }
 
-// generatePasswordResetToken generates a cryptographically secure password reset token
-func generatePasswordResetToken() (string, error) {
+// GeneratePasswordResetToken generates a cryptographically secure password reset token
+func GeneratePasswordResetToken() (string, error) {
 	bytes := make([]byte, 32) // 256 bits
 	if _, err := rand.Read(bytes); err != nil {
 		return "", fmt.Errorf("failed to generate random bytes: %w", err)
@@ -54,7 +54,7 @@ func ForgotPassword(database *mongo.Database, w http.ResponseWriter, r *http.Req
 	}
 
 	// Sanitize email input
-	form.Email = sanitizeInput(form.Email)
+	form.Email = SanitizeInput(form.Email)
 
 	if form.Email == "" {
 		RespondWithJSON(w, 400, map[string]string{"error": "Email is required"})
@@ -62,7 +62,7 @@ func ForgotPassword(database *mongo.Database, w http.ResponseWriter, r *http.Req
 	}
 
 	// Validate email format
-	if err := validateEmail(form.Email); err != nil {
+	if err := ValidateEmail(form.Email); err != nil {
 		RespondWithJSON(w, 400, map[string]string{"error": "Invalid email format"})
 		return
 	}
@@ -96,7 +96,7 @@ func ForgotPassword(database *mongo.Database, w http.ResponseWriter, r *http.Req
 	}
 
 	// Generate password reset token
-	resetToken, err := generatePasswordResetToken()
+	resetToken, err := GeneratePasswordResetToken()
 	if err != nil {
 		log.Printf("Failed to generate password reset token: %v", err)
 		RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
@@ -152,8 +152,8 @@ func ResetPassword(database *mongo.Database, w http.ResponseWriter, r *http.Requ
 	}
 
 	// Sanitize inputs
-	form.Token = sanitizeInput(form.Token)
-	form.NewPassword = sanitizeInput(form.NewPassword)
+	form.Token = SanitizeInput(form.Token)
+	form.NewPassword = SanitizeInput(form.NewPassword)
 
 	if form.Token == "" {
 		RespondWithJSON(w, 400, map[string]string{"error": "Reset token is required"})
@@ -166,7 +166,7 @@ func ResetPassword(database *mongo.Database, w http.ResponseWriter, r *http.Requ
 	}
 
 	// Validate new password complexity
-	if err := validatePassword(form.NewPassword); err != nil {
+	if err := ValidatePassword(form.NewPassword); err != nil {
 		RespondWithJSON(w, 400, map[string]string{"error": err.Error()})
 		return
 	}

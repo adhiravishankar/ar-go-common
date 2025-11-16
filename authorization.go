@@ -40,8 +40,8 @@ type PasswordParams struct {
 	keyLength   uint32
 }
 
-// sanitizeInput removes potentially dangerous characters
-func sanitizeInput(input string) string {
+// SanitizeInput removes potentially dangerous characters
+func SanitizeInput(input string) string {
 	// Remove null bytes and control characters
 	input = strings.Map(func(r rune) rune {
 		if r < 32 && r != 9 && r != 10 && r != 13 { // Allow tab, newline, carriage return
@@ -168,7 +168,7 @@ func Authenticate(next http.Handler) http.Handler {
 			}
 
 			// Set the user ID in the context for later use
-			r = setUserID(r, userID)
+			r = SetUserID(r, userID)
 			next.ServeHTTP(w, r)
 		} else {
 			w.Header().Set("Content-Type", "application/json")
