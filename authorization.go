@@ -53,6 +53,20 @@ func SanitizeInput(input string) string {
 	return strings.TrimSpace(input)
 }
 
+// validateJWTSecret ensures the JWT secret meets security requirements
+func ValidateJWTSecret() error {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		return fmt.Errorf("JWT_SECRET environment variable is required")
+	}
+
+	if len(secret) < 32 {
+		return fmt.Errorf("JWT_SECRET must be at least 32 characters long")
+	}
+
+	return nil
+}
+
 func Authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Validate JWT secret first
