@@ -1,6 +1,6 @@
-module github.com/adhiravishankar/fh-go-backends/common
+module github.com/adhiravishankar/ar-go-common
 
-go 1.25.0
+go 1.22.0
 
 require (
 	github.com/dgraph-io/ristretto v0.2.0

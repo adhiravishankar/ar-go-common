@@ -11,3 +11,4 @@ mongo-converter/data
 *.exe
 server-linux-arm64
 server-linux-amd64
+vendor/
