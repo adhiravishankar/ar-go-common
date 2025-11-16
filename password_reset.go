@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/adhiravishankar/fh-go-backends/common"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -45,12 +44,12 @@ func generatePasswordResetToken() (string, error) {
 }
 
 // ForgotPassword handles forgot password requests
-func ForgotPassword(w http.ResponseWriter, r *http.Request) {
+func ForgotPassword(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
 	usersCollection := database.Collection("users")
 	resetsCollection := database.Collection("password_resets")
 
 	var form ForgotPasswordForm
-	if !common.ValidateAndBindJSON(w, r, &form) {
+	if !ValidateAndBindJSON(w, r, &form) {
 		return
 	}
 
@@ -58,13 +57,13 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	form.Email = sanitizeInput(form.Email)
 
 	if form.Email == "" {
-		common.RespondWithJSON(w, 400, map[string]string{"error": "Email is required"})
+		RespondWithJSON(w, 400, map[string]string{"error": "Email is required"})
 		return
 	}
 
 	// Validate email format
 	if err := validateEmail(form.Email); err != nil {
-		common.RespondWithJSON(w, 400, map[string]string{"error": "Invalid email format"})
+		RespondWithJSON(w, 400, map[string]string{"error": "Invalid email format"})
 		return
 	}
 
@@ -81,18 +80,18 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			// Email doesn't exist, but return success to prevent enumeration
-			common.RespondWithJSON(w, 200, successResponse)
+			RespondWithJSON(w, 200, successResponse)
 			return
 		}
 		log.Printf("Failed to find user by email: %v", err)
-		common.RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
+		RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
 		return
 	}
 
 	// Check if user is verified
 	if !user.IsVerified {
 		// Don't send reset email to unverified accounts
-		common.RespondWithJSON(w, 200, successResponse)
+		RespondWithJSON(w, 200, successResponse)
 		return
 	}
 
@@ -100,7 +99,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	resetToken, err := generatePasswordResetToken()
 	if err != nil {
 		log.Printf("Failed to generate password reset token: %v", err)
-		common.RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
+		RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
 		return
 	}
 
@@ -108,7 +107,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	resetID, err := uuid.NewV7()
 	if err != nil {
 		log.Printf("Failed to generate reset ID: %v", err)
-		common.RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
+		RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
 		return
 	}
 
@@ -129,7 +128,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	_, err = resetsCollection.InsertOne(r.Context(), passwordReset)
 	if err != nil {
 		log.Printf("Failed to create password reset record: %v", err)
-		common.RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
+		RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
 		return
 	}
 
@@ -139,16 +138,16 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		// Don't fail the request if email sending fails, but log it
 	}
 
-	common.RespondWithJSON(w, 200, successResponse)
+	RespondWithJSON(w, 200, successResponse)
 }
 
 // ResetPassword handles password reset with token
-func ResetPassword(w http.ResponseWriter, r *http.Request) {
+func ResetPassword(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
 	usersCollection := database.Collection("users")
 	resetsCollection := database.Collection("password_resets")
 
 	var form ResetPasswordForm
-	if !common.ValidateAndBindJSON(w, r, &form) {
+	if !ValidateAndBindJSON(w, r, &form) {
 		return
 	}
 
@@ -157,18 +156,18 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 	form.NewPassword = sanitizeInput(form.NewPassword)
 
 	if form.Token == "" {
-		common.RespondWithJSON(w, 400, map[string]string{"error": "Reset token is required"})
+		RespondWithJSON(w, 400, map[string]string{"error": "Reset token is required"})
 		return
 	}
 
 	if form.NewPassword == "" {
-		common.RespondWithJSON(w, 400, map[string]string{"error": "New password is required"})
+		RespondWithJSON(w, 400, map[string]string{"error": "New password is required"})
 		return
 	}
 
 	// Validate new password complexity
 	if err := validatePassword(form.NewPassword); err != nil {
-		common.RespondWithJSON(w, 400, map[string]string{"error": err.Error()})
+		RespondWithJSON(w, 400, map[string]string{"error": err.Error()})
 		return
 	}
 
@@ -182,11 +181,11 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			common.RespondWithJSON(w, 400, map[string]string{"error": "Invalid or expired reset token"})
+			RespondWithJSON(w, 400, map[string]string{"error": "Invalid or expired reset token"})
 			return
 		}
 		log.Printf("Failed to find password reset by token: %v", err)
-		common.RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
+		RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
 		return
 	}
 
@@ -195,11 +194,11 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 	err = usersCollection.FindOne(r.Context(), bson.M{"_id": passwordReset.UserID}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			common.RespondWithJSON(w, 400, map[string]string{"error": "Invalid reset token"})
+			RespondWithJSON(w, 400, map[string]string{"error": "Invalid reset token"})
 			return
 		}
 		log.Printf("Failed to find user by ID: %v", err)
-		common.RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
+		RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
 		return
 	}
 
@@ -207,7 +206,7 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 	hashedPassword, err := GenerateFromPassword(form.NewPassword, defaultPasswordParams)
 	if err != nil {
 		log.Printf("Failed to hash new password: %v", err)
-		common.RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
+		RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
 		return
 	}
 
@@ -225,7 +224,7 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 	_, err = usersCollection.UpdateOne(r.Context(), bson.M{"_id": user.ID}, userUpdate)
 	if err != nil {
 		log.Printf("Failed to update user password: %v", err)
-		common.RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
+		RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
 		return
 	}
 
@@ -249,7 +248,7 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 		// Continue anyway, password reset was successful
 	}
 
-	common.RespondWithJSON(w, 200, map[string]string{
+	RespondWithJSON(w, 200, map[string]string{
 		"message": "Password has been successfully reset. You can now log in with your new password.",
 	})
 }

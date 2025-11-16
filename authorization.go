@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/adhiravishankar/fh-go-backends/common"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/argon2"
@@ -57,7 +56,7 @@ func sanitizeInput(input string) string {
 func Authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Validate JWT secret first
-		if err := common.ValidateJWTSecret(); err != nil {
+		if err := ValidateJWTSecret(); err != nil {
 			log.Printf("JWT secret validation failed: %v", err)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(500)

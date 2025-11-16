@@ -11,10 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/adhiravishankar/fh-go-backends/common"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/argon2"
 )
 
@@ -23,12 +23,12 @@ type LoginForm struct {
 	Password string `json:"password" binding:"required"` // The password of the user
 }
 
-func Login(w http.ResponseWriter, r *http.Request) {
+func Login(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
 	collection := database.Collection("users")
 
 	// Get the request body
 	var form LoginForm
-	if !common.ValidateAndBindJSON(w, r, &form) {
+	if !ValidateAndBindJSON(w, r, &form) {
 		return
 	}
 
@@ -40,13 +40,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	err := collection.FindOne(r.Context(), bson.M{"email": form.Email}).Decode(&user)
 	if err != nil {
 		// Use generic error message to prevent user enumeration
-		common.RespondWithJSON(w, 401, map[string]string{"error": "Invalid credentials"})
+		RespondWithJSON(w, 401, map[string]string{"error": "Invalid credentials"})
 		return
 	}
 
 	// Check if account is locked
 	if user.LockedUntil != nil && time.Now().Before(*user.LockedUntil) {
-		common.RespondWithJSON(w, 423, map[string]string{"error": "Account temporarily locked"})
+		RespondWithJSON(w, 423, map[string]string{"error": "Account temporarily locked"})
 		return
 	}
 
@@ -54,7 +54,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	match, err := ComparePasswordAndHash(form.Password, user.Password)
 	if err != nil {
 		log.Printf("Password comparison error for user %s: %v", user.Email, err)
-		common.RespondWithJSON(w, 401, map[string]string{"error": "Invalid credentials"})
+		RespondWithJSON(w, 401, map[string]string{"error": "Invalid credentials"})
 		return
 	}
 
@@ -76,13 +76,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			},
 		})
 
-		common.RespondWithJSON(w, 401, map[string]string{"error": "Invalid credentials"})
+		RespondWithJSON(w, 401, map[string]string{"error": "Invalid credentials"})
 		return
 	}
 
 	// Check if email is verified
 	if !user.IsVerified {
-		common.RespondWithJSON(w, 403, map[string]interface{}{
+		RespondWithJSON(w, 403, map[string]interface{}{
 			"error": "Please verify your email address before logging in. Check your email for a verification link.",
 			"email": user.Email,
 		})
@@ -107,7 +107,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 	if err != nil {
 		log.Printf("Failed to sign JWT: %v", err)
-		common.RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
+		RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
 		return
 	}
 
@@ -121,9 +121,9 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// Upgrade password hash if needed
-	go rehashPasswordIfNeeded(form.Password, &user)
+	go rehashPasswordIfNeeded(database, form.Password, &user)
 
-	common.RespondWithJSON(w, 200, map[string]interface{}{
+	RespondWithJSON(w, 200, map[string]interface{}{
 		"token": tokenString,
 		"user": map[string]string{
 			"id":    user.ID,
@@ -136,7 +136,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 // rehashPasswordIfNeeded checks if the user's password hash uses the latest
 // recommended parameters, and if not, re-hashes it and updates it in the database.
 // This is done in a goroutine to not block the login request.
-func rehashPasswordIfNeeded(password string, user *User) {
+func rehashPasswordIfNeeded(database *mongo.Database, password string, user *User) {
 	p, _, _, err := DecodeHash(user.Password)
 	if err != nil {
 		log.Printf("rehash: could not decode password hash for user %s: %v\n", user.Email, err)

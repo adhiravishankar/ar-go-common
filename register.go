@@ -10,9 +10,9 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/adhiravishankar/fh-go-backends/common"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Email validation regex
@@ -115,19 +115,19 @@ func generateVerificationToken() (string, error) {
 	return fmt.Sprintf("%08d", token), nil
 }
 
-func Register(w http.ResponseWriter, r *http.Request) {
+func Register(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
 	collection := database.Collection("users")
 
 	// Validate JWT secret first
-	if err := common.ValidateJWTSecret(); err != nil {
+	if err := ValidateJWTSecret(); err != nil {
 		log.Printf("JWT secret validation failed: %v", err)
-		common.RespondWithJSON(w, 500, map[string]string{"error": "Server configuration error"})
+		RespondWithJSON(w, 500, map[string]string{"error": "Server configuration error"})
 		return
 	}
 
 	// Get the request body
 	var form RegisterForm
-	if !common.ValidateAndBindJSON(w, r, &form) {
+	if !ValidateAndBindJSON(w, r, &form) {
 		return
 	}
 
@@ -190,21 +190,21 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	var existingUser User
 	err = collection.FindOne(r.Context(), bson.M{"email": form.Email}).Decode(&existingUser)
 	if err == nil {
-		common.RespondWithJSON(w, 400, map[string]string{"error": "Registration failed"})
+		RespondWithJSON(w, 400, map[string]string{"error": "Registration failed"})
 		return
 	}
 
 	_, err = collection.InsertOne(r.Context(), user)
 	if err != nil {
 		log.Printf("Failed to insert user: %v", err)
-		common.RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
+		RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
 		return
 	}
 
 	// Create email verification record
-	if err := CreateEmailVerification(user.ID, user.Email, verificationToken); err != nil {
+	if err := CreateEmailVerification(database, user.ID, user.Email, verificationToken); err != nil {
 		log.Printf("Failed to create email verification record: %v", err)
-		common.RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
+		RespondWithJSON(w, 500, map[string]string{"error": "Server error"})
 		return
 	}
 
@@ -215,7 +215,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		// The user is still created and can request a new verification email
 	}
 
-	common.RespondWithJSON(w, 200, map[string]string{
+	RespondWithJSON(w, 200, map[string]string{
 		"message": "Registration successful. Please check your email to verify your account.",
 		"email":   user.Email,
 	})

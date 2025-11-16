@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/adhiravishankar/fh-go-backends/common"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // contextKey is a custom type for context keys to avoid collisions
@@ -48,41 +48,41 @@ type User struct {
 	IsVerified    bool `json:"-" bson:"is_verified"`    // 1 byte
 }
 
-func GetUser(w http.ResponseWriter, r *http.Request) {
+func GetUser(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
 	userID := getUserID(r)
 	if userID == "" {
-		common.RespondWithJSON(w, http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
+		RespondWithJSON(w, http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
 		return
 	}
 
 	var user User
 	err := database.Collection("users").FindOne(r.Context(), bson.M{"_id": userID}).Decode(&user)
 	if err != nil {
-		common.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to get user"})
+		RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to get user"})
 		return
 	}
 
-	common.RespondWithJSON(w, http.StatusOK, user)
+	RespondWithJSON(w, http.StatusOK, user)
 }
 
-func UpdateUser(w http.ResponseWriter, r *http.Request) {
+func UpdateUser(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
 	userID := getUserID(r)
 	if userID == "" {
-		common.RespondWithJSON(w, http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
+		RespondWithJSON(w, http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
 		return
 	}
 
 	userForm := User{}
-	if !common.ValidateAndBindJSON(w, r, &userForm) {
+	if !ValidateAndBindJSON(w, r, &userForm) {
 		return
 	}
 	userForm.UpdatedAt = time.Now()
 
 	_, err := database.Collection("users").UpdateOne(r.Context(), bson.M{"_id": userID}, bson.M{"$set": userForm})
 	if err != nil {
-		common.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to update user"})
+		RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to update user"})
 		return
 	}
 
-	common.RespondWithJSON(w, http.StatusOK, userForm)
+	RespondWithJSON(w, http.StatusOK, userForm)
 }
