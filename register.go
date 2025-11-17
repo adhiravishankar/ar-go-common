@@ -115,11 +115,11 @@ func GenerateVerificationToken() (string, error) {
 	return fmt.Sprintf("%08d", token), nil
 }
 
-func Register(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
+func Register(database *mongo.Database, w http.ResponseWriter, r *http.Request, secret, templateName, baseURL, fromEmail string) {
 	collection := database.Collection("users")
 
 	// Validate JWT secret first
-	if err := ValidateJWTSecret(); err != nil {
+	if err := ValidateJWTSecret(secret); err != nil {
 		log.Printf("JWT secret validation failed: %v", err)
 		RespondWithJSON(w, 500, map[string]string{"error": "Server configuration error"})
 		return
@@ -209,7 +209,7 @@ func Register(database *mongo.Database, w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Send verification email
-	if err := SendVerificationEmail(user.Email, user.Name, "templates/verify.html", verificationToken); err != nil {
+	if err := SendVerificationEmail(user.Email, user.Name, templateName, baseURL, fromEmail, verificationToken); err != nil {
 		log.Printf("Failed to send verification email: %v", err)
 		// Don't fail the registration if email sending fails
 		// The user is still created and can request a new verification email

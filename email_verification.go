@@ -61,7 +61,7 @@ func CreateEmailVerification(database *mongo.Database, userID, email, token stri
 }
 
 // VerifyEmail handles email verification
-func VerifyEmail(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
+func VerifyEmail(database *mongo.Database, w http.ResponseWriter, r *http.Request, fromEmail string) {
 	usersCollection := database.Collection("users")
 	verificationsCollection := database.Collection("email_verifications")
 
@@ -151,7 +151,7 @@ func VerifyEmail(database *mongo.Database, w http.ResponseWriter, r *http.Reques
 	}
 
 	// Send welcome email (don't fail if this fails)
-	if err := SendWelcomeEmail(user.Email, user.Name); err != nil {
+	if err := SendWelcomeEmail(user.Email, fromEmail, user.Name); err != nil {
 		log.Printf("Failed to send welcome email: %v", err)
 		// Continue anyway, verification was successful
 	}
@@ -166,7 +166,7 @@ func VerifyEmail(database *mongo.Database, w http.ResponseWriter, r *http.Reques
 	})
 }
 
-func ResendVerificationEmail(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
+func ResendVerificationEmail(database *mongo.Database, w http.ResponseWriter, r *http.Request, fromEmail, templateName, baseURL string) {
 	var form ResendVerificationEmailForm
 	if !ValidateAndBindJSON(w, r, &form) {
 		return
@@ -182,7 +182,7 @@ func ResendVerificationEmail(database *mongo.Database, w http.ResponseWriter, r 
 	}
 
 	// Send verification email
-	if err := SendVerificationEmail(emailVerification.Email, emailVerification.Name, "templates/verify.html", emailVerification.Token); err != nil {
+	if err := SendVerificationEmail(emailVerification.Email, emailVerification.Name, templateName, baseURL, fromEmail, emailVerification.Token); err != nil {
 		log.Printf("Failed to send verification email: %v", err)
 		// Don't fail the registration if email sending fails
 		// The user is still created and can request a new verification email

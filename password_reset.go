@@ -44,7 +44,7 @@ func GeneratePasswordResetToken() (string, error) {
 }
 
 // ForgotPassword handles forgot password requests
-func ForgotPassword(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
+func ForgotPassword(database *mongo.Database, w http.ResponseWriter, r *http.Request, baseURL, fromEmail string) {
 	usersCollection := database.Collection("users")
 	resetsCollection := database.Collection("password_resets")
 
@@ -133,7 +133,7 @@ func ForgotPassword(database *mongo.Database, w http.ResponseWriter, r *http.Req
 	}
 
 	// Send password reset email
-	if err := SendPasswordResetEmail(user.Email, user.Name, resetToken); err != nil {
+	if err := SendPasswordResetEmail(user.Email, user.Name, baseURL, fromEmail, resetToken); err != nil {
 		log.Printf("Failed to send password reset email: %v", err)
 		// Don't fail the request if email sending fails, but log it
 	}
@@ -142,7 +142,7 @@ func ForgotPassword(database *mongo.Database, w http.ResponseWriter, r *http.Req
 }
 
 // ResetPassword handles password reset with token
-func ResetPassword(database *mongo.Database, w http.ResponseWriter, r *http.Request) {
+func ResetPassword(database *mongo.Database, w http.ResponseWriter, r *http.Request, fromEmail string) {
 	usersCollection := database.Collection("users")
 	resetsCollection := database.Collection("password_resets")
 
@@ -243,7 +243,7 @@ func ResetPassword(database *mongo.Database, w http.ResponseWriter, r *http.Requ
 	}
 
 	// Send password change confirmation email (don't fail if this fails)
-	if err := SendPasswordChangeConfirmationEmail(user.Email, user.Name); err != nil {
+	if err := SendPasswordChangeConfirmationEmail(user.Email, fromEmail, user.Name); err != nil {
 		log.Printf("Failed to send password change confirmation email: %v", err)
 		// Continue anyway, password reset was successful
 	}
