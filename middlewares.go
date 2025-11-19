@@ -14,6 +14,18 @@ func GetPathParam(r *http.Request, param string) string {
 	return r.PathValue(param)
 }
 
+// OptionsHandler middleware handles OPTIONS requests for CORS preflight
+func OptionsHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodOptions {
+			// CORS headers are already set by CorsMiddleware, just return 200
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 // loggingMiddleware logs HTTP requests
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
