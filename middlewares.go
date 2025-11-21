@@ -26,13 +26,6 @@ func OptionsHandler(next http.Handler) http.Handler {
 	})
 }
 
-// loggingMiddleware logs HTTP requests
-func LoggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r)
-	})
-}
-
 // recoveryMiddleware recovers from panics
 func RecoveryMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
